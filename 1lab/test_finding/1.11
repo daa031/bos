@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "Каталоги:"
+find . -maxdepth 1 -type d -exec ls -ld {} \; | sed '1d'
+
+echo "Обычные файлы:"
+find . -maxdepth 1 -type f -exec ls -l {} \; | sed '1d'
+
+echo "Символьные ссылки:"
+find . -maxdepth 1 -type l -exec ls -l {} \; | sed '1d'
+
+echo "Символьные устройства:"
+find . -maxdepth 1 -type c -exec ls -l {} \; | sed '1d'
+
+echo "Блочные устройства:"
+find . -maxdepth 1 -type b -exec ls -l {} \; | sed '1d'

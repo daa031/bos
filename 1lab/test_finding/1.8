@@ -1,0 +1,9 @@
+#!/bin/bash
+
+user_processes=$(ps -U daa031 -u daa031 | wc -l)
+root_processes=$(ps -U root -u root | wc -l)
+
+echo "Процессов пользователя: daa031"
+echo "$user_processes"
+echo "Процессов пользователя root:"
+echo "$root_processes"

@@ -1,0 +1,5 @@
+#!bin/bash
+echo "Good morning"
+date 
+cal
+cat TOdo
