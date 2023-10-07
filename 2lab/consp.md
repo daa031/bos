@@ -290,27 +290,244 @@ sudo grep ivan /etc/shadow
 Проделайте эти шаги и создайте пользователя вручную.
 
 Подсказка
-
 Для создания записи в /etc/shadow можно воспользоваться командой openssl passwd.
+
+
+### Решение
+1. 
+2. ``nano /etc/passwd`` - добавим сюда новую строку ``user_lab:x:1003:1003::/home/user_lab:/bin/bash``
+3. ``nano /etc/group`` - добавим сюда новую строку ``user_lab:x:1003:``
+4. ``/home/user_lab`` - Создать домашнюю директорию пользователя
+5. немного изменил ``/etc/skel``; ``cp -r /etc/skel/* /home/user_lab`` - скопировал скелет;
+6. ``sudo chown -R user_lab:1003 /home/user_lab`` ; ``sudo chmod 700 /home/user_lab``- изменить владельца и группу домашней директории на вновь созданного пользователя и его группу.  ``ls -l`` - вывод: ``drwxr-xr-x. 2 user_lab user_lab  6 Oct  6 00:36 desktop`` -  Это описание типа и прав доступа к директории desktop, где d - директория,  rwx - права доступа для владельца (чтение (r), запись (w) и выполнение (x)); r-x - права для группы и r-x - права для остальных пользователей. ``chmod 700 /home/user_lab/`` дать права :7 означает права доступа для владельца (user), которые включают в себя rwx (чтение, запись и выполнение). 0 означает отсутствие прав доступа для группы и остальных пользователей (ничего не разрешено).
+7.  ``openssl passwd -6 1`` - выдасть сторку
+8. эту строку прокинуть в /etc/shadow и записать туда же дату :``current_date=$(date +%s) days_since_epoch=$((current_date / 86400)) echo $days_since_epoch `` выведет ``19636`` Эта команда вернет текущую дату и время в секундах с начала эпохи Unix. Чтобы получить количество дней, вы можете разделить это значение на 86400 (поскольку в одном дне 86400 секунд): 
+9. тестим. Надо выйти из рута залогиниться под дргим пользователм и потом уже из него выполнить вход с паролем на новосозданного юзер_лаб
+10. ``visudo`` -  сюда вписать <user_name> ALL=(ALL) ALL чтобы дать права супер пользователя 
+
+## С использованием командного интерфейса
 ```bash
-[root@localhost user2]# nano /etc/passwd
-[root@localhost user2]# nano /etc/group
-[root@localhost home]# mkdir user_lab
+[root@localhost ~]# useradd user_lab2
+[root@localhost ~]# passwd user_lab2
+Changing password for user user_lab2.
+New password: 
+BAD PASSWORD: The password is a palindrome
+Retype new password: 
+passwd: all authentication tokens updated successfully.
+[root@localhost ~]# cd /home/
 [root@localhost home]# ls
-daa  kikmepls  user2  user_lab
-[root@localhost home]# pwd
-/home
-[root@localhost home]# cd user_lab
-# перед этим подправил /etc/skel
-[root@localhost user_lab]# pwd
-/home/user_lab
-[root@localhost user_lab]#  cp -r /etc/skel/* . 
+daa  kikmepls  user2  user_lab  user_lab2
+[root@localhost home]# cd user_lab2
+[root@localhost user_lab2]# ls
+desktop  project1
+[root@localhost user_lab2]# 
+```
 
-
-user2:x:1002:1002::/home/user2:/bin/bash
+### сравнение
+```bash
+[root@localhost user_lab2]# grep user_lab /etc/shadow
+user_lab:$6$GoFwPT6/n9quXBvi$9NvugaDZxRpYanCoiZ2jX0mPz/pF96Jj/2drRU2uM6kaDGjzQghO9oRUg.MsArBk2OQ5Pls8i5qACAkHsLXpI0:19636:0:99999:7:::
+user_lab2:$6$UFICcYiTysPZ0vAD$jakjcjLA5RVPEOJ.IeUKmRv/CvNqQFc7Rc1EC7hTEtNl0G4E6TTvbWgUJ7aquKnsjKYK.fHgrlQy6QUcrswjr0:19636:0:99999:7:::
+[root@localhost user_lab2]# grep user_lab /etc/passwd
 user_lab:x:1003:1003::/home/user_lab:/bin/bash
-user2:x:1002:
+user_lab2:x:1004:1004::/home/user_lab2:/bin/bash
+[root@localhost user_lab2]# grep user_lab /etc/group
 user_lab:x:1003:
+user_lab2:x:1004:
+[root@localhost user_lab2]# 
+```
 
+## Удаление пользователя
+Рассмотрим пример, когда удаляется только учетная запись пользователя, но после создания нового пользователя последний получает доступ к файлам пользователя, который был удален.
+```bash
+sudo useradd old
+id old
+# Вывод: uid=1003(old) gid=1004(old) groups=1004(old)
+
+ls -l /home/
+# Часть вывода: drwx------. 2 old     old      62 Sep 26 20:52 old
+
+sudo userdel old
+ls -l /home
+# Часть вывода: drwx------. 2    1003    1004  62 Sep 26 20:52 old
+
+sudo useradd new
+id new
+# Вывод:  uid=1003(new) gid=1004(new) groups=1004(new)
+
+ls -l /home
+# Часть вывода:
+# drwx------. 2 new     new      62 Sep 26 20:54 new
+# drwx------. 2 new     new      62 Sep 26 20:52 old
+```
+Чтобы предотвратить подобные ситуации, рекомендуется не удалять пользователя, а блокировать его учетную запись. Дополнительно можно придерживаться правил, следующих ниже.
+
+- При создании нового пользователя явно указывать его UID:
+```bash
+sudo useradd -u 1002 user2
+```
+
+- При удалении пользователя перемещать все его файлы в специально выделенную директорию, а его домашнюю директорию удалять:
+```bash
+find / -user user1 -exec mv {} /new/location; 2>/dev/null
+sudo userdel -r user1
+```
+
+- Чтобы найти файлы, которые не принадлежат никакому пользователю, можно выполнить следующую команду:
+```bash
+find / -nouser -o -nogroup 2>/dev/null
+```
 
 ```
+Команда find / -nouser -o -nogroup 2>/dev/null используется для поиска файлов и директорий в корневой директории (/) системы, которые не имеют назначенных пользователей (владельцев) или групп. Давайте разберем эту команду по частям:
+
+find: Это утилита поиска файлов и директорий в файловой системе.
+
+/: Это начальный путь, с которого начинается поиск. В данном случае, поиск выполняется в корневой директории, то есть по всей файловой системе.
+
+-nouser: Этот параметр find фильтрует файлы и директории, которые не имеют назначенного пользователя (владельца).
+
+-o: Этот параметр find означает "или". Он позволяет выполнять операции "или" между разными критериями поиска. В данной команде он используется для того, чтобы найти файлы или директории, которые не имеют назначенного пользователя ИЛИ не имеют назначенной группы.
+
+-nogroup: Этот параметр find фильтрует файлы и директории, которые не имеют назначенной группы.
+
+2>/dev/null: Эта часть команды направляет стандартный поток ошибок (stderr) в /dev/null, что означает, что ошибки (например, отсутствие разрешений на доступ к определенным директориям) будут игнорироваться, и вы не увидите их на экране.
+
+Таким образом, команда find / -nouser -o -nogroup 2>/dev/null выполняет поиск файлов и директорий в корневой директории, которые либо не имеют назначенного пользователя (владельца), либо не имеют назначенной группы. Результаты поиска будут выведены на экран, если они найдены, но ошибки будут подавлены и не отображены.
+
+```
+
+## Прикладная задача
+Пусть вам необходимо
+
+Создать группу consultants с GID 40000, создать в ней пользователей для Ивана, Полины и Дмитрия. Основная группа должна быть группой с именем пользователя
+Задать каждому пользователю пароль default
+Потребовать смены пароля пользователей каждые 30 дней, за исключением Полины — ей 15 дней
+Аккаунты должны истечь через 90 дней
+После первого входа пользователи должны сменить свой пароль
+
+
+### решение:
+
+
+
+[root@localhost home]#groupadd -g 40000 users_lab
+
+[root@localhost home]# groupadd -g 40001 ivan
+[root@localhost home]# groupadd -g 40002 polina
+[root@localhost home]# groupadd -g 40003 dima
+
+[root@localhost home]# useradd -g ivan -G users_lab -m ivan
+[root@localhost home]# useradd -g polina -G users_lab -m polina
+[root@localhost home]# useradd -g dima -G users_lab -m dima
+
+cat /etc/group
+users_lab:x:40000:ivan,polina,dima
+ivan:x:40001:
+polina:x:40002:
+dima:x:40003:
+
+cat /etc/passwd 
+ivan:x:1006:40001::/home/ivan:/bin/bash
+polina:x:1007:40002::/home/polina:/bin/bash
+dima:x:1008:40003::/home/dima:/bin/bash
+
+
+[root@localhost home]# passwd ivan
+Changing password for user ivan.
+New password: 
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password: 
+passwd: all authentication tokens updated successfully.
+[root@localhost home]# passwd dima
+Changing password for user dima.
+New password: 
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password: 
+passwd: all authentication tokens updated successfully.
+[root@localhost home]# passwd polina
+Changing password for user polina.
+New password: 
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password: 
+passwd: all authentication tokens updated successfully.
+[root@localhost home]# passwd polisdsdd
+passwd: Unknown user name 'polisdsdd'.
+[root@localhost home]# 
+
+
+[root@localhost ~]# chage -m 0 -M 30 -W 7 ivan
+[root@localhost ~]# chage -m 0 -M 30 -W 7 dima
+[root@localhost ~]# chage -m 0 -M 15 -W 7 polina
+
+[root@localhost ~]# sudo chage -E $(date -d "+90 days" +%Y-%m-%d) ivan
+[root@localhost ~]# sudo chage -E $(date -d "+90 days" +%Y-%m-%d) dima
+[root@localhost ~]# sudo chage -E $(date -d "+90 days" +%Y-%m-%d) polina
+
+
+[root@localhost ~]# passwd -e ivan
+Expiring password for user ivan.
+passwd: Success
+[root@localhost ~]# passwd -e dima
+Expiring password for user dima.
+passwd: Success
+[root@localhost ~]# passwd -e polina
+Expiring password for user polina.
+passwd: Success
+
+
+
+useradd: Это имя утилиты, используемой для создания новых учетных записей пользователей.
+
+-g ivan: Этот параметр -g указывает основную группу пользователя. В данном случае, вы указали, что основная группа пользователя "Иван" (ivan). Это означает, что группа с именем "ivan" будет основной группой пользователя, и ему будет назначен GID этой группы.
+
+-G consultants: Этот параметр -G указывает дополнительные группы, к которым будет принадлежать пользователь. Вы указали, что пользователь будет также членом группы "consultants". Это означает, что помимо основной группы "ivan", пользователь будет иметь доступ к ресурсам и файлам, доступным для группы "consultants".
+
+-m: Этот параметр -m указывает создать домашний каталог для пользователя. Домашний каталог - это место, где пользователь будет иметь доступ к своим личным файлам и настройкам. Этот флаг гарантирует, что домашний каталог будет создан.
+
+ivan: Здесь указывается имя пользователя, которое вы хотите создать. В данном случае, пользователь будет называться "Иван" (ivan).
+
+
+
+chage: Это имя утилиты, предназначенной для изменения параметров учетных записей пользователей, включая настройку политики смены паролей.
+
+-M 30: Этот параметр -M указывает максимальное количество дней, через которое пароль пользователя должен быть изменен. В данном случае, установлено значение 30, что означает, что каждые 30 дней пользователю будет необходимо сменить пароль.
+
+-m 0: Этот параметр -m указывает минимальное количество дней, которое должно пройти между сменой паролей. Установка значения 0 означает, что нет минимального ожидания и пользователь может сменить пароль в любое время.
+
+-W 7: Этот параметр -W указывает предупреждение (warning) в днях до истечения срока действия пароля. В данном случае, установлено значение 7, что означает, что пользователь будет предупрежден за 7 дней до того, как его пароль истечет.
+
+ivan: Здесь указывается имя пользователя, для которого вы настраиваете политику смены пароля. В данном случае, политика применяется к пользователю с именем "Иван" (ivan).
+
+
+
+-E: Этот параметр -E используется для указания даты окончания срока действия учетной записи.
+
+`$(date -d "+90 days" +%Y-%m-%d):` Внутри круглых скобок выполняется команда date, которая вычисляет текущую дату и добавляет к ней 90 дней. Формат %Y-%m-%d указывает на формат даты (год-месяц-день), в который нужно преобразовать результат выполнения команды date. Таким образом, эта часть команды определяет дату, через которую истечет срок действия учетной записи.
+
+ivan: Здесь указывается имя пользователя, для которого вы устанавливаете дату окончания срока действия учетной записи. В данном случае, это пользователь "Иван" (ivan).
+
+
+passwd -e polina - Эта команда установит флаг "пароль истек" для пользователя "Иван". После этого, когда пользователь "Иван" попытается войти в систему, ему будетпредложено сменить свой пароль.
+
+
+## Допуск
+- Назовите основные команды получения справки по программам.
+<details><summary>ОТЫВЕТ</summary>
+Скрытое содержимое подсказки.
+</details>
+Назовите основные команды навигации по системе, вывода на экран произвольного текста, содержимого файлов и директорий.
+
+Назовите основные команды создания, перемещения, удаления файлов и директорий.
+
+Назовите команду для поиска файлов в файловой системе.
+
+Что делают операторы >, >>, |?
+
+В каком файле хранятся данные о пользователях?
+
+Назовите команды для создания/удаления/изменения пользователя/группы.
+
+Как повысить свои привилегии?
+
+Какой командой изменять пароль?
