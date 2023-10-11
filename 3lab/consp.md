@@ -119,6 +119,12 @@ stat /etc/passwd
 - `r--` - права доступа для всех остальных пользователей (не владельцев и не входящих в группу)
 это эквивалентно `0644`
 
+### ПРАВА
+R = 4
+
+w = 2
+
+x = 1
 
 #### Изменение прав доступа к файлам
 
@@ -188,6 +194,135 @@ drwxr-xr-x. 2 root root               18 Oct  9 21:54 .dir
 ```
 
 
+
+### Задачи
+Решите следующие задачи от имени обычного пользователя (не root).
+
+
+```bash
+[dima@localhost test]$ ls
+file
+[dima@localhost test]$ ls -l
+total 0
+-rw-r--r--. 1 dima dima 0 Oct 11 12:29 file
+[dima@localhost test]$ chmod 000 file
+[dima@localhost test]$ ls -l
+total 0
+----------. 1 dima dima 0 Oct 11 12:29 file
+[dima@localhost test]$ echo "test" > file
+-bash: file: Permission denied
+[dima@localhost test]$ chmod 200 file
+[dima@localhost test]$ echo "test" > file
+[dima@localhost test]$ ls -l
+total 4
+--w-------. 1 dima dima 5 Oct 11 12:32 file
+[dima@localhost test]$ cat file 
+cat: file: Permission denied
+[dima@localhost test]$ chmod 240 file
+[dima@localhost test]$ ls -l
+total 4
+--w-r-----. 1 dima dima 5 Oct 11 12:32 file
+[dima@localhost test]$ cat file 
+cat: file: Permission denied
+[dima@localhost test]$ chmod 640 file
+[dima@localhost test]$ ls -l
+total 4
+-rw-r-----. 1 dima dima 5 Oct 11 12:32 file
+[dima@localhost test]$ cat file 
+test
+[dima@localhost test]$ mkdir dir 
+[dima@localhost test]$ cd dir/
+[dima@localhost dir]$ echo "file2" > new_file
+[dima@localhost dir]$ ls
+new_file
+[dima@localhost dir]$ cd ..
+[dima@localhost test]$ ls
+dir  file
+[dima@localhost test]$ ls -l
+total 4
+drwxr-xr-x. 2 dima dima 22 Oct 11 12:35 dir
+-rw-r-----. 1 dima dima  5 Oct 11 12:32 file
+[dima@localhost test]$ chmod 644 dir/
+[dima@localhost test]$ ls -l
+total 4
+drw-r--r--. 2 dima dima 22 Oct 11 12:35 dir
+-rw-r-----. 1 dima dima  5 Oct 11 12:32 file
+[dima@localhost test]$ cat /dir/new_file
+cat: /dir/new_file: No such file or directory
+[dima@localhost test]$ cd dir/
+-bash: cd: dir/: Permission denied
+[dima@localhost test]$ rm dir/new_file 
+rm: cannot remove 'dir/new_file': Permission denied
+[dima@localhost test]$ chown root:root dir/
+chown: changing ownership of 'dir/': Operation not permitted
+[dima@localhost test]$ umask
+0022
+[dima@localhost test]$ umask 066
+[dima@localhost test]$ umask
+0066
+[dima@localhost test]$ touch file1
+[dima@localhost test]$ ls -l file1 
+-rw-------. 1 dima dima 0 Oct 11 13:25 file1
+[dima@localhost test]$ umask 000
+[dima@localhost test]$ touch file2
+[dima@localhost test]$ ls -l file2
+-rw-rw-rw-. 1 dima dima 0 Oct 11 13:27 file2
+[root@localhost ~]# cd /home/dima/
+[root@localhost dima]# ls
+desktop  project1  test
+[root@localhost dima]# cd test/
+[root@localhost test]# ls
+dir  file  file1  file2
+[root@localhost test]# tree
+.
+├── dir
+│   └── new_file
+├── file
+├── file1
+└── file2
+
+1 directory, 4 files
+[root@localhost test]# chown root file
+[root@localhost test]# ls -l file
+-rw-r-----. 1 root dima 5 Oct 11 12:32 file
+[root@localhost test]# chmod 600 file
+[root@localhost test]# ls -l file
+-rw-------. 1 root dima 5 Oct 11 12:32 file
+[root@localhost test]# 
+
+-rw-rw-rw-. 1 dima dima 0 Oct 11 13:27 file2
+[dima@localhost test]$ cd ..
+[dima@localhost ~]$ cd 
+.bash_history  .bash_profile  desktop/       test/
+.bash_logout   .bashrc        project1/      
+[dima@localhost ~]$ cd test/
+[dima@localhost test]$ ls
+dir  file  file1  file2
+[dima@localhost test]$ cat file
+cat: file: Permission denied
+
+
+
+[root@localhost test]# chmod 640 file
+[dima@localhost test]$ cat file
+test
+
+
+```
+
+
+
+### Программа
+Реализуйте программу chmod на языке C с использованием системных вызовов. Вызов программы должен происходить следующим образом:
+
+chmod <number> <file>
+Например,
+
+chmod 0644 some_file
+Проверьте пользовательский ввод, обработайте ошибки и выведите их в случае возникновения.
+
+Подсказка
+Для конвертации строки в число можно воспользоваться функцией strtoul (string to unsigned long).
 
 
 
