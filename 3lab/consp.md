@@ -325,34 +325,37 @@ chmod 0644 some_file
 Для конвертации строки в число можно воспользоваться функцией strtoul (string to unsigned long).
 
 #### РЕШЕНИЕ 
-```bash
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-
-int main(int argc, char *argv[]) 
-{
+my_chmod
+- `fprintf` - как printf, только выводит в заданный поток
+- `stderr` - поток ошибок: (.`/my_program 2> error.log`); (`dmesg, syslog, journalctl` - сообщения об ошибках могут записываться в системные логи.)
+- `exit(1)` (`exit(EXIT_FAILURE)`) - завершиаем программу с кодом  1 (посмтреть `echo $?`)
+- `perror`  предназначен специально для вывода сообщений об ошибках и автоматически включает описание ошибки, связанное с текущим значением errno. Он удобен для вывода стандартных диагностических сообщений об ошибках.
+-
+```c
+int main(int argc, char *argv[]) {
     if (argc != 3) {
-        printf("error argument\n");
-        return 1;
+        fprintf(stderr, "ошибка аргументов\n");
+        exit(1);
     }
 
-    char *permission_str = argv[1];
-    char *file_name = argv[2];
+    const char *mode_str = argv[1];
+    const char *file = argv[2];
 
-    int permission = strtol(permission_str, NULL, 10);
-    
-    if (0 > permission || permission > 777) {
-	printf("wrong code\n");
-   	return 1;
+    unsigned long mode = strtoul(mode_str, NULL, 8);
+
+    if (mode < 0 || mode > 7777) {
+        fprintf(stderr,"Неверный формат прав доступа");
+        exit(1);
     }
-    if ( chmod(file_name, permission) != 0 ){
-	printf("wrong chmod\n"); 
-	return 1;
+
+    if (chmod(file, (mode_t)mode) == -1) {
+        fprintf(stderr,"ошибка");
+        exit(1);
     }
-     return 0;
+	
+    printf("Права доступа к файлу успешно изменены \n");
+    return 0;
 }
-
 ```
 
 
@@ -443,7 +446,7 @@ lsattr file
 # ---------------------- file
 ```
 
-
+#### ОТВЕТ
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -456,23 +459,26 @@ lsattr file
 int main(int argc, char *argv[]) {
 
     if (argc != 2) {
-        printf( "error arg\n");
-        return 1;
+        fprintf(stderr, "error arg\n");
+        exit(1);
     }
 
     char *file_name = argv[1];
     int file_descriptor = open(file_name, O_RDONLY);
 
     if (file_descriptor == -1) {
-        printf("cant open file");
-        return 1;
+        fprintf(stderr,"cant open file");
+        exit(1);
     }
 
     unsigned int flags;
     if (ioctl(file_descriptor, FS_IOC_GETFLAGS, &flags) == -1) {
-        printf("Ошибка при получении атрибутов файловой системы");
-        return 1;
+        fprintf(stderr, "Ошибка при получении атрибутов файловой системы");
+        exit(1);
     }
+
+//вообще можно ксорить
+//flags ^= FS_NOATIME_FL;
 
     if (flags & FS_NOATIME_FL) {
         flags &= ~FS_NOATIME_FL;
@@ -483,9 +489,9 @@ int main(int argc, char *argv[]) {
     }
     
     if (ioctl(file_descriptor, FS_IOC_SETFLAGS, &flags) == -1) {
-        printf("error\n");
+        fprintf(stderr,"error\n");
         close(file_descriptor);
-        return 1;
+        exit(1);
     }
     close(file_descriptor);
     return 0;
@@ -597,4 +603,8 @@ chattr +(-)атрибут file_name
 ---------- 1 root root   798 Jul 21 21:15 /etc/shadow
 -rwsr-xr-x 1 root root 26688 Sep 10  2015 /usr/bin/passwd
 ```
-ответ: /etc/shadow и подобные программы либо имеют установленный бит suid (поэтому каждый может запускать их с правами root), либо предназначены только для использования root, поэтому разрешения на, в любом случае, не имеют значения.
+ответ: /etc/shadow и подобные программы либо имеют установленный бит suid (поэтому каждый может запускать их с правами root), либо предназначены только для использования root, поэтому разрешения на, в любом случае, не имеют значения.Биты разрешений обычно не применяются к процессам, запущенным с соответствующими возможностями (например, когда они выполняются с правами root). 
+
+2. 
+
+
