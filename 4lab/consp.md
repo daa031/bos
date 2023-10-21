@@ -304,4 +304,9 @@ if (result == -1) {
     perror("Ошибка в системном вызове");
 }
 fprintf(stderr, "Нет разрешения на выполнение операции\n");
+if (-1 == access("some_file", F_OK))
+{
+    perror("access");
+    exit(EXIT_FAILURE);
+}
 ```
