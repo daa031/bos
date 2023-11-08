@@ -109,8 +109,6 @@ F S   UID     PID    PPID  C PRI  NI ADDR SZ WCHAN  TTY          TIME CMD
   $ ps -eLf
   $ ps axms
 ```
-
-ps -eLf:
 - `-e` - Опция, которая отображает все процессы, включая процессы других пользователей.
 - `-L` - Опция, которая отображает информацию о легковесных процессах (потоках) внутри каждого процесса. Легковесные процессы (потоки) могут быть частью многозадачных процессов.
 Эта команда покажет информацию о легковесных процессах, включая их идентификаторы, приоритеты, состояния и другие атрибуты в контексте каждого родительского процесса.
@@ -121,3 +119,298 @@ ps -eLf:
 - `m` - Опция, которая отображает информацию о легковесных процессах (потоках) внутри каждого процесса.
 - `s` - представляет состояние (state) каждого легковесного процесса. 
 
+### Атрибуты безопасности процессов
+
+- `ps -eo euser,ruser,suser,fuser,f,comm,label` - используется для вывода информации о процессах с различными атрибутами, такими как пользователь, реальный пользователь, запускающий пользователь, список файлов, флаги состояния процесса, имя команды и метка безопасности. 
+
+`-eo`: Эта опция указывает формат вывода для ps. В данном случае, `-e` означает, что будут выводиться все процессы, и `-o` означает, что мы определяем пользовательский формат вывода.
+
+`euser`: пользователь от имени которого выполняется процесс.
+
+`ruser`: пользователь, который запустил процесс.
+
+`suser`: пользователь, от имени которого был установлен субъект безопасности процесса.
+
+`fuser`: пользователь, от имени которого выполняется процесс файловой блокировки.
+
+`f`: Этот атрибут предоставляет информацию о флагах состояния процесса.
+
+`comm`: имя команды (программы), которая выполняется процессом.
+
+`label`: информация о метке безопасности процесса.
+
+---
+---
+
+- `ps axZ`
+  
+---
+---
+
+- `ps -eM`
+
+
+
+
+### Информация о процессах, выполняющихся от имени пользователя root (real & effective ID), в пользовательском формате:
+
+- `ps -U root -u root u`
+
+`-U root`: Это опция, которая фильтрует процессы только для указанного пользователя "root". 
+`u` - формат вывода информации о процессах
+
+### Информация о процессах в пользовательском формате:
+
+-  `ps -eo pid,tid,class,rtprio,ni,pri,psr,pcpu,stat,wchan:14,comm`
+
+`tid` - выводит идентификатор потока (TID)
+
+`class` - класс планировщика процесса.
+
+`rtprio` -  приоритет в реальном времени (если применимо).
+
+`ni` -  приоритет процесса (приоритет "nice").
+
+`pri` -  общий приоритет процесса.
+
+`psr`- номер процессора, на котором процесс выполняется.
+
+`pcpu` -  процент использования центрального процессора (CPU) процессом.
+
+`stat` -  остояние процесса (например, "R" для выполнения, "S" для ожидания и так далее).
+
+`wchan` -  Этот атрибут выводит информацию о точке ожидания, где процесс ожидает (до 14 символов).
+
+`comm` -  имя команды (программы), которую выполняет процесс.
+
+---
+---
+
+-  `ps axo stat,euid,ruid,tty,tpgid,sess,pgrp,ppid,pid,pcpu,comm`
+
+`ax`: Опция -a означает, что будут отображены все процессы, и -x означает, что будут включены процессы, не связанные с терминалом.
+
+`euid`: эффективный идентификатор пользователя (effective user ID) процесса.
+
+`ruid`: реальный идентификатор пользователя (real user ID) процесса.
+
+`sess`:  идентификатор сессии процесса.
+
+
+
+---
+---
+
+-  `ps -Ao pid,tt,user,fname,tmout,f,wchan`
+
+`-A`: будут отображены все процессы на системе.
+
+`tt`:информацию о терминале, к которому привязан процесс.
+
+`user`: имя пользователя, от имени которого выполняется процесс.
+
+`fname`: выводит имя исполняемой команды (программы), которую выполняет процесс.
+
+`tmout`: нформацию о таймауте процесса (если применимо).
+
+`f`: от атрибут выводит флаги состояния процесса.
+
+`wchan`: выводит информацию о точке ожидания, где процесс ожидает.
+
+
+### Только идентификаторы процессов с именем systemd:
+- `ps -C systemd -o pid=`
+
+
+### только имя процесса с идентификатором номер:
+
+- `ps -q номер -o comm=`
+
+## Выполнение процесса в основном и фоновом режимах
+
+1. 
+2. ` ( while true; do printf "AAA %d " $$ >> ~/test.out; sleep 1; done ) `
+3. `  $ tail -f ~/test.out`
+4. `  $ Ctrl+z`
+5. 
+```bash
+[daa@localhost 5lab]$ jobs
+[1]+  Stopped                 ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done )
+[daa@localhost 5lab]$ ps j
+   PPID     PID    PGID     SID TTY        TPGID STAT   UID   TIME COMMAND
+    805     806     806     806 pts/0       2040 Ss    1000   0:00 -bash
+   1506    1507    1507    1507 pts/1       2147 Ss    1000   0:00 -bash
+   1507    2036    2036    1507 pts/1       2147 T     1000   0:00 -bash
+   2036    2138    2036    1507 pts/1       2147 T     1000   0:00 sleep 1
+   1507    2147    2147    1507 pts/1       2147 R+    1000   0:00 ps j
+[daa@localhost 5lab]$ bg
+[1]+ ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done ) &
+[daa@localhost 5lab]$ jobs
+[1]+  Running                 ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done ) &
+[daa@localhost 5lab]$ ps j
+   PPID     PID    PGID     SID TTY        TPGID STAT   UID   TIME COMMAND
+    805     806     806     806 pts/0       2040 Ss    1000   0:00 -bash
+   1506    1507    1507    1507 pts/1       2183 Ss    1000   0:00 -bash
+   1507    2036    2036    1507 pts/1       2183 S     1000   0:00 -bash
+   2036    2182    2036    1507 pts/1       2183 S     1000   0:00 sleep 1
+   1507    2183    2183    1507 pts/1       2183 R+    1000   0:00 ps j
+
+```
+6. 
+```bash
+[daa@localhost 5lab]$  ( while true; do printf "UUU %d " $$ >> test.out; sleep 1; done ) &
+[2] 2467
+```
+7. 
+```bash
+[daa@localhost 5lab]$ jobs
+[1]-  Running                 ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done ) &
+[2]+  Running                 ( while true; do
+    printf "UUU %d " $$ >> test.out; sleep 1;
+done ) &
+
+```
+8. 
+```bash
+[daa@localhost 5lab]$ fg 1
+( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done )
+^C
+[daa@localhost 5lab]$ jobs
+[2]+  Stopped                 ( while true; do
+    printf "UUU %d " $$ >> test.out; sleep 1;
+done )
+[daa@localhost 5lab]$ fg 2
+( while true; do
+    printf "UUU %d " $$ >> test.out; sleep 1;
+done )
+^C
+[daa@localhost 5lab]$ jobs
+[daa@localhost 5lab]$ 
+```
+
+## Посылка сигналов процессам
+
+1. 
+
+2. 
+```bash
+[root@localhost 5lab]# ( while true; do printf "AAA %d " $$ >> test.out; sleep 1; done ) &
+[1] 2931
+[root@localhost 5lab]# ( while true; do printf "UUU %d " $$ >> test.out; sleep 1; done ) &
+[2] 2940
+[root@localhost 5lab]# jobs 
+[1]-  Running                 ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done ) &
+[2]+  Running                 ( while true; do
+    printf "UUU %d " $$ >> test.out; sleep 1;
+done ) &
+[root@localhost 5lab]# ps j
+   PPID     PID    PGID     SID TTY        TPGID STAT   UID   TIME COMMAND
+      1     710     710     710 tty1         710 Ss+      0   0:00 /sbin/agetty -o -p -- \u --noclear - linux
+    806     830     830     806 pts/0       2967 S        0   0:00 su -
+    830     834     834     806 pts/0       2967 S        0   0:00 -bash
+    834    2931    2931     806 pts/0       2967 S        0   0:00 -bash
+    834    2940    2940     806 pts/0       2967 S        0   0:00 -bash
+   2931    2965    2931     806 pts/0       2967 S        0   0:00 sleep 1
+   2940    2966    2940     806 pts/0       2967 S        0   0:00 sleep 1
+    834    2967    2967     806 pts/0       2967 R+       0   0:00 ps j
+
+```
+3. 
+```bash
+tail -f test.out
+```
+4. 
+```bash
+[root@localhost 5lab]# kill -SIGSTOP %1
+
+[1]+  Stopped                 ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done )
+[root@localhost 5lab]# jobs 
+[1]+  Stopped                 ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done )
+[2]-  Running                 ( while true; do
+    printf "UUU %d " $$ >> test.out; sleep 1;
+done ) &
+
+```
+5. 
+```bash
+[root@localhost 5lab]# kill -SIGSTOP %2
+
+[2]+  Stopped                 ( while true; do
+    printf "UUU %d " $$ >> test.out; sleep 1;
+done )
+[root@localhost 5lab]# jobs
+[1]-  Stopped                 ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done )
+[2]+  Stopped                 ( while true; do
+    printf "UUU %d " $$ >> test.out; sleep 1;
+done )
+```
+6. 
+```bash
+[root@localhost 5lab]# fg
+( while true; do
+    printf "UUU %d " $$ >> test.out; sleep 1;
+done )
+^C
+[root@localhost 5lab]# jobs
+[1]+  Stopped                 ( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done )
+[root@localhost 5lab]# fg
+( while true; do
+    printf "AAA %d " $$ >> test.out; sleep 1;
+done )
+^C
+[root@localhost 5lab]# jobs
+[root@localhost 5lab]# 
+```
+
+## Изучение команд trap и sleep 
+
+- `trap` - озволяет установить обработчик на сигнал. Опция `-l` выводит список сигналов. Опция `-p` выводит установленные обработчики сигналов.
+
+```bash
+
+  $ trap -l
+   1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+   6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+  11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+  16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP
+  21) SIGTTIN	22) SIGTTOU	23) SIGURG	24) SIGXCPU	25) SIGXFSZ
+  26) SIGVTALRM	27) SIGPROF	28) SIGWINCH	29) SIGIO	30) SIGPWR
+  31) SIGSYS	34) SIGRTMIN	35) SIGRTMIN+1	36) SIGRTMIN+2	37) SIGRTMIN+3
+  38) SIGRTMIN+4	39) SIGRTMIN+5	40) SIGRTMIN+6	41) SIGRTMIN+7	42) SIGRTMIN+8
+  43) SIGRTMIN+9	44) SIGRTMIN+10	45) SIGRTMIN+11	46) SIGRTMIN+12	47) SIGRTMIN+13
+  48) SIGRTMIN+14	49) SIGRTMIN+15	50) SIGRTMAX-14	51) SIGRTMAX-13	52) SIGRTMAX-12
+  53) SIGRTMAX-11	54) SIGRTMAX-10	55) SIGRTMAX-9	56) SIGRTMAX-8	57) SIGRTMAX-7
+  58) SIGRTMAX-6	59) SIGRTMAX-5	60) SIGRTMAX-4	61) SIGRTMAX-3	62) SIGRTMAX-2
+  63) SIGRTMAX-1	64) SIGRTMAX
+  
+  ```
+Запустите дочерний shell и установите обработчик сигнала EXIT (0, который посылается нажатием Ctrl+d).
+
+  ```bash
+    $ sh
+  sh-4.3$ trap 'echo Завершение работы...; sleep 2' EXIT
+  sh-4.3$ trap -p EXIT
+  trap -- 'echo Завершение работы...; sleep 2' EXIT
+  ```
+
+  
