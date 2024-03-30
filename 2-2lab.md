@@ -1,4 +1,5 @@
-# 2  Лабораторная работа "Регистрация системных событий"
+# 3  Лабораторная работа "Изучение SELinux"
+
 
 ### Использование SELinux
 
@@ -15,7 +16,7 @@
 ```sh
 [daa@localhost ~]$ ls -l /etc/selinux/
 [daa@localhost ~]$ ls -l /etc/selinux/targeted/
-```
+```ё
 Выведут: 
 - `/etc/selinux/` - тут лежат файлы конфигурации  selinux
     - `config` - 
