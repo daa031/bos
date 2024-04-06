@@ -256,3 +256,15 @@ Created symlink /etc/systemd/system/multi-user.target.wants/mephi.path → /usr/
 # systemctl start mephi.path 
 # touch /tmp/mephi.file
 ```
+
+
+```sh
+# journalctl -f -u mephi
+-- Logs begin at Thu 2019-10-10 15:56:01 MSK. --
+May 16 01:11:04 localhost.localdomain systemd[1]: Started MEPhI hello service.
+May 16 01:11:04 localhost.localdomain printf[4417]: Hello, MEPhI!
+May 16 01:11:04 localhost.localdomain systemd[1]: mephi.service: Succeeded.
+May 16 01:30:24 localhost.localdomain systemd[1]: Started MEPhI hello service.
+May 16 01:30:24 localhost.localdomain printf[4894]: Hello, MEPhI!
+May 16 01:30:24 localhost.localdomain systemd[1]: mephi.service: Succeeded.
+```
